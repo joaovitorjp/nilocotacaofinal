@@ -4,6 +4,7 @@ import SpreadsheetGrid from '@/components/SpreadsheetGrid';
 import FloatingButton from '@/components/FloatingButton';
 import LoadListDialog from '@/components/dialogs/LoadListDialog';
 import GenerateLinkDialog from '@/components/dialogs/GenerateLinkDialog';
+import ImportListDialog from '@/components/dialogs/ImportListDialog';
 import { useQuotation } from '@/hooks/useQuotation';
 import { Lista, Product, CellData } from '@/types/quotation';
 import { toast } from 'sonner';
@@ -22,21 +23,17 @@ const Dashboard = () => {
   const [loadListOpen, setLoadListOpen] = useState(false);
   const [generateLinkOpen, setGenerateLinkOpen] = useState(false);
   const [finishedQuotesOpen, setFinishedQuotesOpen] = useState(false);
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const handleImportList = () => {
-    fileInputRef.current?.click();
+    setImportDialogOpen(true);
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-        importFromExcel(file);
-      } else {
-        toast.error('Por favor, selecione um arquivo Excel (.xlsx ou .xls)');
-      }
+  const handleImportWithName = (file: File, listName: string) => {
+    if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+      importFromExcel(file, listName);
+    } else {
+      toast.error('Por favor, selecione um arquivo Excel (.xlsx ou .xls)');
     }
   };
 
@@ -94,13 +91,6 @@ const Dashboard = () => {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".xlsx,.xls"
-        onChange={handleFileChange}
-        className="hidden"
-      />
 
       <Toolbar
         onImportList={handleImportList}
@@ -187,6 +177,12 @@ const Dashboard = () => {
         open={generateLinkOpen}
         onOpenChange={setGenerateLinkOpen}
         onGenerateLink={generateQuotationLink}
+      />
+
+      <ImportListDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImport={handleImportWithName}
       />
     </div>
   );

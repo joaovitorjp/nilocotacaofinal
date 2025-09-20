@@ -37,16 +37,28 @@ const LoadListDialog = ({ open, onOpenChange, onSelectList, showFinalized = fals
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Se showFinalized for true, mostrar apenas finalizadas
-      // Caso contrário, mostrar todas (para reutilizar listas)
       if (showFinalized) {
+        // Para cotações finalizadas, mostrar apenas finalizadas
         query = query.eq('status', 'finalizada');
+      } else {
+        // Para carregar lista, mostrar apenas listas cruas (sem respostas)
+        query = query.eq('status', 'aberta');
       }
 
       const { data, error } = await query;
+      
+      if (!showFinalized && data) {
+        // Filtrar apenas listas sem respostas (listas cruas)
+        const rawLists = data.filter(list => {
+          const respostas = list.respostas as any;
+          return !respostas || Object.keys(respostas).length === 0;
+        });
+        setLists(rawLists as unknown as Lista[]);
+      } else {
+        setLists((data || []) as unknown as Lista[]);
+      }
 
       if (error) throw error;
-      setLists((data || []) as unknown as Lista[]);
     } catch (error) {
       console.error('Error loading lists:', error);
     } finally {
@@ -93,7 +105,7 @@ const LoadListDialog = ({ open, onOpenChange, onSelectList, showFinalized = fals
             <div className="text-center py-8 text-muted-foreground">
               {showFinalized 
                 ? 'Nenhuma cotação finalizada encontrada'
-                : 'Nenhuma lista encontrada'
+                : 'Nenhuma lista crua encontrada'
               }
             </div>
           ) : (

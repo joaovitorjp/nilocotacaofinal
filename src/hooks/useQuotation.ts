@@ -8,7 +8,7 @@ export const useQuotation = () => {
   const [currentList, setCurrentList] = useState<Lista | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const importFromExcel = useCallback(async (file: File) => {
+  const importFromExcel = useCallback(async (file: File, listName?: string) => {
     setLoading(true);
     try {
       const data = await file.arrayBuffer();
@@ -30,12 +30,12 @@ export const useQuotation = () => {
         return;
       }
 
-      const listName = `Lista ${new Date().toLocaleDateString('pt-BR')} - ${new Date().toLocaleTimeString('pt-BR')}`;
+      const finalListName = listName || `Lista ${new Date().toLocaleDateString('pt-BR')} - ${new Date().toLocaleTimeString('pt-BR')}`;
 
       const { data: newList, error } = await supabase
         .from('listas')
         .insert({
-          nome_lista: listName,
+          nome_lista: finalListName,
           produtos: produtos as any,
           respostas: {},
           status: 'aberta'
