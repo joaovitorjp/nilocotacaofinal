@@ -32,11 +32,16 @@ const LoadListDialog = ({ open, onOpenChange, onSelectList, showFinalized = fals
   const loadLists = async () => {
     setLoading(true);
     try {
-      const query = supabase
+      let query = supabase
         .from('listas')
         .select('*')
-        .eq('status', showFinalized ? 'finalizada' : 'aberta')
         .order('created_at', { ascending: false });
+
+      // Se showFinalized for true, mostrar apenas finalizadas
+      // Caso contrário, mostrar todas (para reutilizar listas)
+      if (showFinalized) {
+        query = query.eq('status', 'finalizada');
+      }
 
       const { data, error } = await query;
 
@@ -50,7 +55,17 @@ const LoadListDialog = ({ open, onOpenChange, onSelectList, showFinalized = fals
   };
 
   const handleSelectList = (list: Lista) => {
-    onSelectList(list);
+    // Se não for visualização de finalizadas, criar nova instância sem respostas
+    if (!showFinalized) {
+      const listWithoutResponses = {
+        ...list,
+        respostas: {},
+        status: 'aberta' as const
+      };
+      onSelectList(listWithoutResponses);
+    } else {
+      onSelectList(list);
+    }
     onOpenChange(false);
   };
 

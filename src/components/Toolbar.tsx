@@ -1,13 +1,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, FolderOpen, Link, Archive, LogOut } from 'lucide-react';
+import { Upload, FolderOpen, Link, Archive } from 'lucide-react';
 
 interface ToolbarProps {
   onImportList: () => void;
   onLoadList: () => void;
   onGenerateLink: () => void;
   onFinishedQuotes: () => void;
-  onLogout: () => void;
   canGenerateLink: boolean;
 }
 
@@ -16,11 +15,10 @@ const Toolbar = ({
   onLoadList,
   onGenerateLink,
   onFinishedQuotes,
-  onLogout,
   canGenerateLink
 }: ToolbarProps) => {
   return (
-    <div className="bg-background border-b border-grid-border px-6 py-4 flex items-center justify-between shadow-toolbar">
+    <div className="bg-background border-b border-grid-border px-6 py-4 shadow-toolbar">
       <div className="flex items-center gap-4">
         <h1 className="text-xl font-semibold text-foreground mr-8">Nilo Atacadista</h1>
         
@@ -67,16 +65,6 @@ const Toolbar = ({
           </Button>
         </div>
       </div>
-      
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onLogout}
-        className="gap-2"
-      >
-        <LogOut className="w-4 h-4" />
-        Sair
-      </Button>
     </div>
   );
 };

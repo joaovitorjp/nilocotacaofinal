@@ -56,10 +56,6 @@ const Dashboard = () => {
     setFinishedQuotesOpen(true);
   };
 
-  const handleLogout = () => {
-    // For now, just reload the page
-    window.location.reload();
-  };
 
   const handleEndQuotation = () => {
     if (window.confirm('Tem certeza que deseja finalizar esta cotação? Ela não poderá mais ser editada.')) {
@@ -97,7 +93,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background">
       <input
         ref={fileInputRef}
         type="file"
@@ -111,65 +107,57 @@ const Dashboard = () => {
         onLoadList={handleLoadList}
         onGenerateLink={handleGenerateLink}
         onFinishedQuotes={handleFinishedQuotes}
-        onLogout={handleLogout}
         canGenerateLink={!!currentList && currentList.status === 'aberta'}
       />
 
-      <div className="p-6">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {currentList ? (
           <>
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold">{currentList.nome_lista}</h2>
-                <p className="text-sm text-muted-foreground">
-                  {Array.isArray(currentList.produtos) ? currentList.produtos.length : 0} produtos
+            <div className="px-6 py-3 border-b border-grid-border bg-background">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-lg font-medium">{currentList.nome_lista}</h2>
+                  <span className="text-sm text-muted-foreground">
+                    {Array.isArray(currentList.produtos) ? currentList.produtos.length : 0} produtos
+                  </span>
                   {currentList.respostas && Object.keys(currentList.respostas).length > 0 && (
-                    <span> • {Object.keys(currentList.respostas).length} empresas responderam</span>
+                    <span className="text-sm text-muted-foreground">
+                      {Object.keys(currentList.respostas).length} empresas
+                    </span>
                   )}
-                </p>
-              </div>
-              <div className="text-sm">
-                Status: <span className={`font-medium ${currentList.status === 'finalizada' ? 'text-destructive' : 'text-primary'}`}>
+                </div>
+                <span className={`text-sm font-medium px-2 py-1 rounded ${currentList.status === 'finalizada' ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
                   {currentList.status === 'finalizada' ? 'Finalizada' : 'Aberta'}
                 </span>
               </div>
             </div>
 
-            <div className="mb-2">
-              <div className="grid gap-2 text-xs font-medium text-grid-header-text bg-grid-header border border-grid-border p-2" 
-                   style={{ gridTemplateColumns: `repeat(${3 + (currentList.respostas ? Object.keys(currentList.respostas).length : 0)}, minmax(120px, 1fr))` }}>
-                <div>Código Interno</div>
-                <div>Descrição</div>
-                <div>Código de Barras</div>
-                {currentList.respostas && Object.keys(currentList.respostas).map(company => (
-                  <div key={company}>Preço - {company}</div>
-                ))}
-              </div>
+            <div className="flex-1 overflow-hidden">
+              <SpreadsheetGrid
+                data={generateGridData()}
+                headers={[
+                  'Código Interno',
+                  'Descrição', 
+                  'Código de Barras',
+                  ...(currentList.respostas ? Object.keys(currentList.respostas).map(company => `Preço - ${company}`) : [])
+                ]}
+                className="h-full"
+              />
             </div>
-
-            <SpreadsheetGrid
-              data={generateGridData()}
-              className="border rounded-lg"
-            />
           </>
         ) : (
-          <div className="text-center py-12">
-            <div className="text-lg font-medium mb-2">Bem-vindo ao Sistema de Cotação</div>
-            <p className="text-muted-foreground mb-6">
-              Importe uma lista de produtos em Excel ou carregue uma lista existente para começar.
-            </p>
-            <div className="space-y-2">
-              <div className="text-sm text-muted-foreground">
-                Formato do arquivo Excel:
-              </div>
-              <div className="text-xs text-muted-foreground max-w-md mx-auto">
-                <div className="grid grid-cols-3 gap-2 bg-muted p-2 rounded">
-                  <div className="font-medium">Coluna A</div>
-                  <div className="font-medium">Coluna B</div>
-                  <div className="font-medium">Coluna C</div>
-                  <div>Código Interno</div>
-                  <div>Descrição</div>
-                  <div>Código de Barras</div>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold mb-4">Sistema de Cotação</h2>
+              <p className="text-muted-foreground mb-8 max-w-md">
+                Importe uma lista de produtos ou carregue uma lista existente para começar
+              </p>
+              <div className="bg-muted/50 p-4 rounded-lg max-w-sm mx-auto">
+                <div className="text-sm font-medium mb-2">Formato Excel:</div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="bg-background p-2 rounded">Código Interno</div>
+                  <div className="bg-background p-2 rounded">Descrição</div>
+                  <div className="bg-background p-2 rounded">Código de Barras</div>
                 </div>
               </div>
             </div>

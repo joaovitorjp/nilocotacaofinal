@@ -8,11 +8,12 @@ interface CellData {
 
 interface SpreadsheetGridProps {
   data: CellData[][];
+  headers?: string[];
   onCellChange?: (row: number, col: number, value: string) => void;
   className?: string;
 }
 
-const SpreadsheetGrid = ({ data, onCellChange, className }: SpreadsheetGridProps) => {
+const SpreadsheetGrid = ({ data, headers, onCellChange, className }: SpreadsheetGridProps) => {
   const [selectedCell, setSelectedCell] = useState<{row: number, col: number} | null>(null);
   const [editingCell, setEditingCell] = useState<{row: number, col: number} | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -59,41 +60,53 @@ const SpreadsheetGrid = ({ data, onCellChange, className }: SpreadsheetGridProps
     }
   }, [editingCell]);
 
-  const maxCols = Math.max(...data.map(row => row.length), 16);
-  const maxRows = Math.max(data.length, 20);
+  const maxCols = Math.max(...data.map(row => row.length), headers?.length || 3);
+  const displayRows = data.length > 0 ? data : [];
 
   return (
-    <div className={cn("border border-grid-border bg-grid-cell overflow-auto", className)}>
-      <table className="w-full border-collapse">
-        <thead>
-          <tr>
-            <th className="w-12 h-8 bg-grid-header border-r border-b border-grid-border text-grid-header-text text-xs font-medium"></th>
-            {Array.from({ length: maxCols }, (_, i) => (
-              <th
-                key={i}
-                className="min-w-[100px] h-8 bg-grid-header border-r border-b border-grid-border text-grid-header-text text-xs font-medium px-2"
-              >
-                {getColumnLabel(i)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {Array.from({ length: maxRows }, (_, rowIndex) => (
-            <tr key={rowIndex}>
-              <td className="w-12 h-8 bg-grid-header border-r border-b border-grid-border text-grid-header-text text-xs font-medium text-center">
+    <div className={cn("flex flex-col h-full bg-background", className)}>
+      {/* Fixed Header */}
+      <div className="flex-shrink-0 border-b border-grid-border bg-grid-header">
+        <div className="flex">
+          <div className="w-12 h-10 flex items-center justify-center border-r border-grid-border text-grid-header-text text-xs font-medium">
+            #
+          </div>
+          {headers ? headers.map((header, i) => (
+            <div
+              key={i}
+              className="min-w-[150px] flex-1 h-10 flex items-center px-3 border-r border-grid-border text-grid-header-text text-xs font-medium"
+            >
+              {header}
+            </div>
+          )) : Array.from({ length: maxCols }, (_, i) => (
+            <div
+              key={i}
+              className="min-w-[150px] flex-1 h-10 flex items-center px-3 border-r border-grid-border text-grid-header-text text-xs font-medium"
+            >
+              {getColumnLabel(i)}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="min-h-full">
+          {displayRows.map((row, rowIndex) => (
+            <div key={rowIndex} className="flex border-b border-grid-border hover:bg-accent/50">
+              <div className="w-12 h-10 flex items-center justify-center border-r border-grid-border bg-grid-header text-grid-header-text text-xs font-medium">
                 {rowIndex + 1}
-              </td>
+              </div>
               {Array.from({ length: maxCols }, (_, colIndex) => {
-                const cellData = data[rowIndex]?.[colIndex];
+                const cellData = row[colIndex];
                 const isSelected = selectedCell?.row === rowIndex && selectedCell?.col === colIndex;
                 const isEditing = editingCell?.row === rowIndex && editingCell?.col === colIndex;
                 
                 return (
-                  <td
+                  <div
                     key={colIndex}
                     className={cn(
-                      "min-w-[100px] h-8 border-r border-b border-grid-border px-1 cursor-cell relative",
+                      "min-w-[150px] flex-1 h-10 border-r border-grid-border px-2 cursor-cell flex items-center relative",
                       isSelected ? "bg-grid-cell-selected" : "bg-grid-cell hover:bg-grid-cell-hover",
                       cellData?.readOnly && "bg-muted cursor-not-allowed"
                     )}
@@ -107,20 +120,20 @@ const SpreadsheetGrid = ({ data, onCellChange, className }: SpreadsheetGridProps
                         onChange={(e) => setEditValue(e.target.value)}
                         onBlur={handleCellSubmit}
                         onKeyDown={(e) => handleCellKeyDown(e, rowIndex, colIndex)}
-                        className="w-full h-full bg-transparent border-0 outline-none text-xs px-1"
+                        className="w-full h-full bg-transparent border-0 outline-none text-xs"
                       />
                     ) : (
-                      <div className="text-xs px-1 truncate">
+                      <div className="text-xs truncate w-full">
                         {cellData?.value || ''}
                       </div>
                     )}
-                  </td>
+                  </div>
                 );
               })}
-            </tr>
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+      </div>
     </div>
   );
 };
