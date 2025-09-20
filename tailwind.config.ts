@@ -22,6 +22,21 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          hover: "hsl(var(--primary-hover))",
+          light: "hsl(var(--primary-light))",
+        },
+        grid: {
+          border: "hsl(var(--grid-border))",
+          header: "hsl(var(--grid-header))",
+          headerText: "hsl(var(--grid-header-text))",
+          cell: "hsl(var(--grid-cell))",
+          cellSelected: "hsl(var(--grid-cell-selected))",
+          cellHover: "hsl(var(--grid-cell-hover))",
+        },
+        toolbar: {
+          DEFAULT: "hsl(var(--button-toolbar))",
+          hover: "hsl(var(--button-toolbar-hover))",
+          text: "hsl(var(--button-toolbar-text))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -62,6 +77,10 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        toolbar: "var(--shadow-toolbar)",
+        float: "var(--shadow-float)",
       },
       keyframes: {
         "accordion-down": {
