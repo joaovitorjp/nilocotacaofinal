@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 
 interface CellData {
@@ -25,8 +25,9 @@ const SpreadsheetGrid = ({
   const [selectedCell, setSelectedCell] = useState<{row: number, col: number} | null>(null);
   const [editingCell, setEditingCell] = useState<{row: number, col: number} | null>(null);
   const [editValue, setEditValue] = useState('');
-  const [columnSizes, setColumnSizes] = useState<number[]>([]);
+  const [columnWidths, setColumnWidths] = useState<number[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const getColumnLabel = (index: number): string => {
     let result = '';
@@ -36,6 +37,48 @@ const SpreadsheetGrid = ({
     }
     return result;
   };
+
+  // Calculate optimal column widths based on content
+  const calculateColumnWidths = useCallback(() => {
+    if (!data.length && !headers?.length) return [];
+
+    const maxCols = Math.max(
+      ...data.map(row => row.length),
+      headers?.length || 0
+    );
+
+    const widths = Array(maxCols + 1).fill(0); // +1 for row numbers column
+
+    // Set minimum width for row numbers column
+    widths[0] = 60;
+
+    // Calculate width for each data column
+    for (let colIndex = 0; colIndex < maxCols; colIndex++) {
+      let maxWidth = 100; // Minimum width
+
+      // Check header width
+      if (headers?.[colIndex]) {
+        const headerText = typeof headers[colIndex] === 'string' ? headers[colIndex] : getColumnLabel(colIndex);
+        maxWidth = Math.max(maxWidth, headerText.length * 8 + 24);
+      }
+
+      // Check data width
+      for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
+        const cellValue = data[rowIndex]?.[colIndex]?.value || '';
+        maxWidth = Math.max(maxWidth, cellValue.length * 8 + 24);
+      }
+
+      // Cap maximum width at 300px
+      widths[colIndex + 1] = Math.min(maxWidth, 300);
+    }
+
+    return widths;
+  }, [data, headers]);
+
+  useEffect(() => {
+    const newWidths = calculateColumnWidths();
+    setColumnWidths(newWidths);
+  }, [calculateColumnWidths]);
 
   // Calculate which cells have the lowest prices for highlighting
   const dataWithLowestPrices = useMemo(() => {
@@ -100,9 +143,10 @@ const SpreadsheetGrid = ({
       e.preventDefault();
       handleCellSubmit();
       // Move to next cell
+      const maxCols = Math.max(...dataWithLowestPrices.map(r => r.length), headers?.length || 0);
       const nextCol = col + 1;
-      const nextRow = nextCol >= (headers?.length || dataWithLowestPrices[0]?.length || 0) ? row + 1 : row;
-      const finalCol = nextCol >= (headers?.length || dataWithLowestPrices[0]?.length || 0) ? 0 : nextCol;
+      const nextRow = nextCol >= maxCols ? row + 1 : row;
+      const finalCol = nextCol >= maxCols ? 0 : nextCol;
       
       if (nextRow < dataWithLowestPrices.length) {
         setTimeout(() => handleCellClick(nextRow, finalCol), 10);
@@ -125,103 +169,146 @@ const SpreadsheetGrid = ({
     }
   }, [editingCell]);
 
-  const maxCols = Math.max(...dataWithLowestPrices.map(row => row.length), headers?.length || 3);
+  const maxCols = Math.max(...dataWithLowestPrices.map(row => row.length), headers?.length || 0);
   const displayRows = dataWithLowestPrices.length > 0 ? dataWithLowestPrices : [];
 
-  // Initialize column sizes if not set
-  useEffect(() => {
-    if (columnSizes.length === 0) {
-      const initialSizes = Array(maxCols + 1).fill(100 / (maxCols + 1)); // +1 for row numbers
-      setColumnSizes(initialSizes);
-    }
-  }, [maxCols, columnSizes.length]);
+  const handleColumnResize = (colIndex: number, newWidth: number) => {
+    const newWidths = [...columnWidths];
+    newWidths[colIndex] = Math.max(newWidth, 60);
+    setColumnWidths(newWidths);
+  };
 
   return (
-    <div className={cn("flex flex-col h-full bg-grid-cell border border-grid-border", className)}>
+    <div className={cn("flex flex-col h-full bg-grid-cell overflow-hidden", className)} ref={gridRef}>
       {/* Fixed Header */}
-      <div className="flex-shrink-0 bg-grid-header border-b-2 border-grid-border sticky top-0 z-10 shadow-sm">
-        <ResizablePanelGroup direction="horizontal" className="h-9">
+      <div className="flex-shrink-0 bg-grid-header border-b border-grid-border sticky top-0 z-10">
+        <div className="flex">
           {/* Row numbers column */}
-          <ResizablePanel defaultSize={8} minSize={5} maxSize={15}>
-            <div className="h-full flex items-center justify-center bg-grid-header text-grid-headerText text-xs font-semibold border-r border-grid-border">
+          <div 
+            className="flex-shrink-0 bg-grid-header border-r border-grid-border relative"
+            style={{ width: columnWidths[0] || 60 }}
+          >
+            <div className="h-9 flex items-center justify-center text-grid-headerText text-xs font-semibold">
               #
             </div>
-          </ResizablePanel>
-          <ResizableHandle />
+            <div 
+              className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-primary/30"
+              onMouseDown={(e) => {
+                const startX = e.clientX;
+                const startWidth = columnWidths[0] || 60;
+                
+                const handleMouseMove = (e: MouseEvent) => {
+                  const newWidth = startWidth + (e.clientX - startX);
+                  handleColumnResize(0, newWidth);
+                };
+                
+                const handleMouseUp = () => {
+                  document.removeEventListener('mousemove', handleMouseMove);
+                  document.removeEventListener('mouseup', handleMouseUp);
+                };
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+              }}
+            />
+          </div>
 
           {/* Header columns */}
-          {(headers || Array.from({ length: maxCols }, (_, i) => getColumnLabel(i))).map((header, i) => (
-            <React.Fragment key={i}>
-              <ResizablePanel defaultSize={92 / maxCols} minSize={10}>
-                <div className="h-full flex items-center px-3 bg-grid-header text-grid-headerText text-xs font-semibold border-r border-grid-border truncate">
-                  {typeof header === 'string' ? header : getColumnLabel(i)}
+          {Array.from({ length: maxCols }, (_, i) => {
+            const headerText = headers?.[i] || getColumnLabel(i);
+            return (
+              <div 
+                key={i}
+                className="flex-shrink-0 bg-grid-header border-r border-grid-border relative"
+                style={{ width: columnWidths[i + 1] || 120 }}
+              >
+                <div className="h-9 flex items-center justify-center px-2 text-grid-headerText text-xs font-semibold">
+                  <div className="truncate text-center w-full">
+                    {typeof headerText === 'string' ? headerText : getColumnLabel(i)}
+                  </div>
                 </div>
-              </ResizablePanel>
-              {i < maxCols - 1 && <ResizableHandle />}
-            </React.Fragment>
-          ))}
-        </ResizablePanelGroup>
+                <div 
+                  className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-primary/30"
+                  onMouseDown={(e) => {
+                    const startX = e.clientX;
+                    const startWidth = columnWidths[i + 1] || 120;
+                    
+                    const handleMouseMove = (e: MouseEvent) => {
+                      const newWidth = startWidth + (e.clientX - startX);
+                      handleColumnResize(i + 1, newWidth);
+                    };
+                    
+                    const handleMouseUp = () => {
+                      document.removeEventListener('mousemove', handleMouseMove);
+                      document.removeEventListener('mouseup', handleMouseUp);
+                    };
+                    
+                    document.addEventListener('mousemove', handleMouseMove);
+                    document.addEventListener('mouseup', handleMouseUp);
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-auto">
-        <div className="min-h-full">
-          {displayRows.map((row, rowIndex) => (
-            <div key={rowIndex} className="border-b border-grid-border hover:bg-grid-cellHover">
-              <ResizablePanelGroup direction="horizontal" className="h-8">
-                {/* Row number */}
-                <ResizablePanel defaultSize={8} minSize={5} maxSize={15}>
-                  <div className="h-full flex items-center justify-center bg-grid-header text-grid-headerText text-xs font-medium border-r border-grid-border">
-                    {rowIndex + 1}
-                  </div>
-                </ResizablePanel>
-                <ResizableHandle />
-
-                {/* Data columns */}
-                {Array.from({ length: maxCols }, (_, colIndex) => {
-                  const cellData = row[colIndex];
-                  const isSelected = selectedCell?.row === rowIndex && selectedCell?.col === colIndex;
-                  const isEditing = editingCell?.row === rowIndex && editingCell?.col === colIndex;
-                  
-                  return (
-                    <React.Fragment key={colIndex}>
-                      <ResizablePanel defaultSize={92 / maxCols} minSize={10}>
-                        <div
-                          className={cn(
-                            "h-full border-r border-grid-border px-2 cursor-cell flex items-center relative",
-                            "bg-grid-cell text-foreground text-xs",
-                            isSelected && "ring-2 ring-primary ring-inset bg-grid-cellSelected",
-                            !isSelected && "hover:bg-grid-cellHover",
-                            cellData?.readOnly && "bg-grid-cellReadonly cursor-not-allowed",
-                            cellData?.isLowestPrice && !isEditing && "bg-grid-lowestPrice border-l-2 border-l-grid-lowestPriceBorder"
-                          )}
-                          onClick={() => handleCellClick(rowIndex, colIndex)}
-                        >
-                          {isEditing ? (
-                            <input
-                              ref={inputRef}
-                              type="text"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onBlur={handleCellSubmit}
-                              onKeyDown={(e) => handleCellKeyDown(e, rowIndex, colIndex)}
-                              className="w-full h-full bg-grid-cell border-0 outline-none text-xs px-0 ring-2 ring-primary"
-                            />
-                          ) : (
-                            <div className="text-xs truncate w-full">
-                              {cellData?.value || ''}
-                            </div>
-                          )}
-                        </div>
-                      </ResizablePanel>
-                      {colIndex < maxCols - 1 && <ResizableHandle />}
-                    </React.Fragment>
-                  );
-                })}
-              </ResizablePanelGroup>
+        {displayRows.map((row, rowIndex) => (
+          <div key={rowIndex} className="flex border-b border-grid-border hover:bg-grid-cellHover">
+            {/* Row number */}
+            <div 
+              className="flex-shrink-0 bg-grid-header border-r border-grid-border"
+              style={{ width: columnWidths[0] || 60 }}
+            >
+              <div className="h-8 flex items-center justify-center text-grid-headerText text-xs font-medium">
+                {rowIndex + 1}
+              </div>
             </div>
-          ))}
-        </div>
+
+            {/* Data columns */}
+            {Array.from({ length: maxCols }, (_, colIndex) => {
+              const cellData = row[colIndex];
+              const isSelected = selectedCell?.row === rowIndex && selectedCell?.col === colIndex;
+              const isEditing = editingCell?.row === rowIndex && editingCell?.col === colIndex;
+              
+              return (
+                <div
+                  key={colIndex}
+                  className={cn(
+                    "flex-shrink-0 border-r border-grid-border cursor-cell relative",
+                    "bg-grid-cell text-foreground",
+                    isSelected && "ring-2 ring-primary ring-inset bg-grid-cellSelected",
+                    !isSelected && "hover:bg-grid-cellHover",
+                    cellData?.readOnly && "bg-grid-cellReadonly cursor-not-allowed",
+                    cellData?.isLowestPrice && !isEditing && "bg-grid-lowestPrice"
+                  )}
+                  style={{ width: columnWidths[colIndex + 1] || 120 }}
+                  onClick={() => handleCellClick(rowIndex, colIndex)}
+                >
+                  <div className="h-8 flex items-center justify-center px-2 w-full">
+                    {isEditing ? (
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleCellSubmit}
+                        onKeyDown={(e) => handleCellKeyDown(e, rowIndex, colIndex)}
+                        className="w-full h-full bg-transparent border-0 outline-none text-xs text-center ring-2 ring-primary"
+                      />
+                    ) : (
+                      <div className="text-xs text-center w-full truncate">
+                        {cellData?.value || ''}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
