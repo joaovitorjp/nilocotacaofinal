@@ -27,4 +27,5 @@ export interface LinkCotacao {
 export interface CellData {
   value: string;
   readOnly?: boolean;
+  isLowestPrice?: boolean;
 }

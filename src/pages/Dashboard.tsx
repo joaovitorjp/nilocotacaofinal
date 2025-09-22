@@ -131,6 +131,10 @@ const Dashboard = () => {
                   'Código de Barras',
                   ...(currentList.respostas ? Object.keys(currentList.respostas).map(company => `Preço - ${company}`) : [])
                 ]}
+                onCellChange={(row, col, value) => {
+                  // This could be used for live editing if needed in the future
+                }}
+                highlightLowestPrices={true}
                 className="h-full"
               />
             </div>

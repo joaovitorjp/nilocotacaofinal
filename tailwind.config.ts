@@ -32,6 +32,9 @@ export default {
           cell: "hsl(var(--grid-cell))",
           cellSelected: "hsl(var(--grid-cell-selected))",
           cellHover: "hsl(var(--grid-cell-hover))",
+          cellReadonly: "hsl(var(--grid-cell-readonly))",
+          lowestPrice: "hsl(var(--grid-lowest-price))",
+          lowestPriceBorder: "hsl(var(--grid-lowest-price-border))",
         },
         toolbar: {
           DEFAULT: "hsl(var(--button-toolbar))",

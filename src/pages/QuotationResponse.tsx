@@ -37,7 +37,6 @@ const QuotationResponse = () => {
 
       if (linkData.status === 'respondido') {
         toast.error('Esta cotação já foi respondida');
-        return;
       }
 
       setLinkData(linkData as LinkCotacao);
@@ -158,7 +157,7 @@ const QuotationResponse = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex flex-col h-screen bg-background items-center justify-center">
         <div className="text-center">
           <div className="text-lg font-medium">Carregando cotação...</div>
         </div>
@@ -168,7 +167,7 @@ const QuotationResponse = () => {
 
   if (!lista || !linkData) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex flex-col h-screen bg-background items-center justify-center">
         <div className="text-center space-y-4">
           <AlertTriangle className="w-12 h-12 mx-auto text-destructive" />
           <div className="text-lg font-medium">Cotação não encontrada</div>
@@ -181,8 +180,8 @@ const QuotationResponse = () => {
   const isCompleted = linkData.status === 'respondido';
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b border-grid-border bg-background px-6 py-4 shadow-toolbar">
+    <div className="flex flex-col h-screen bg-background">
+      <div className="border-b border-grid-border bg-background px-6 py-4 shadow-toolbar flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-foreground">Cotação - {linkData.empresa}</h1>
@@ -196,23 +195,17 @@ const QuotationResponse = () => {
         </div>
       </div>
 
-      <div className="p-6">
-        <div className="mb-4">
-          <div className="grid grid-cols-4 gap-2 text-xs font-medium text-grid-header-text bg-grid-header border border-grid-border">
-            <div className="p-2 border-r border-grid-border">Código Interno</div>
-            <div className="p-2 border-r border-grid-border">Descrição</div>
-            <div className="p-2 border-r border-grid-border">Código de Barras</div>
-            <div className="p-2">Preço - {linkData.empresa}</div>
-          </div>
-        </div>
-
+      <div className="flex-1 overflow-hidden flex flex-col">
         <SpreadsheetGrid
           data={generateGridData()}
+          headers={['Código Interno', 'Descrição', 'Código de Barras', `Preço - ${linkData.empresa}`]}
           onCellChange={handleCellChange}
-          className="mb-6"
+          className="flex-1"
         />
+      </div>
 
-        {!isCompleted && (
+      {!isCompleted && (
+        <div className="flex-shrink-0 border-t border-grid-border bg-background px-6 py-4">
           <div className="flex justify-center">
             <Button
               onClick={handleSubmit}
@@ -224,14 +217,16 @@ const QuotationResponse = () => {
               {submitting ? 'Enviando...' : 'Enviar Resposta'}
             </Button>
           </div>
-        )}
+        </div>
+      )}
 
-        {isCompleted && (
+      {isCompleted && (
+        <div className="flex-shrink-0 border-t border-grid-border bg-background px-6 py-4">
           <div className="text-center text-muted-foreground">
             Esta cotação já foi enviada e não pode mais ser editada.
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
