@@ -1,12 +1,13 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, FolderOpen, Link, Archive } from 'lucide-react';
+import { Upload, FolderOpen, Link, Archive, Eye } from 'lucide-react';
 
 interface ToolbarProps {
   onImportList: () => void;
   onLoadList: () => void;
   onGenerateLink: () => void;
   onFinishedQuotes: () => void;
+  onOpenQuotes: () => void;
   canGenerateLink: boolean;
 }
 
@@ -15,6 +16,7 @@ const Toolbar = ({
   onLoadList,
   onGenerateLink,
   onFinishedQuotes,
+  onOpenQuotes,
   canGenerateLink
 }: ToolbarProps) => {
   return (
@@ -52,6 +54,16 @@ const Toolbar = ({
           >
             <Link className="w-4 h-4" />
             Gerar Link Cotação
+          </Button>
+          
+          <Button
+            variant="toolbar"
+            size="sm"
+            onClick={onOpenQuotes}
+            className="gap-2"
+          >
+            <Eye className="w-4 h-4" />
+            Cotações Abertas
           </Button>
           
           <Button

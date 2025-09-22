@@ -5,6 +5,7 @@ import FloatingButton from '@/components/FloatingButton';
 import LoadListDialog from '@/components/dialogs/LoadListDialog';
 import GenerateLinkDialog from '@/components/dialogs/GenerateLinkDialog';
 import ImportListDialog from '@/components/dialogs/ImportListDialog';
+import OpenQuotesDialog from '@/components/dialogs/OpenQuotesDialog';
 import { useQuotation } from '@/hooks/useQuotation';
 import { Lista, Product, CellData } from '@/types/quotation';
 import { toast } from 'sonner';
@@ -23,6 +24,7 @@ const Dashboard = () => {
   const [loadListOpen, setLoadListOpen] = useState(false);
   const [generateLinkOpen, setGenerateLinkOpen] = useState(false);
   const [finishedQuotesOpen, setFinishedQuotesOpen] = useState(false);
+  const [openQuotesOpen, setOpenQuotesOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const handleImportList = () => {
@@ -51,6 +53,10 @@ const Dashboard = () => {
 
   const handleFinishedQuotes = () => {
     setFinishedQuotesOpen(true);
+  };
+
+  const handleOpenQuotes = () => {
+    setOpenQuotesOpen(true);
   };
 
 
@@ -97,6 +103,7 @@ const Dashboard = () => {
         onLoadList={handleLoadList}
         onGenerateLink={handleGenerateLink}
         onFinishedQuotes={handleFinishedQuotes}
+        onOpenQuotes={handleOpenQuotes}
         canGenerateLink={!!currentList && currentList.status === 'aberta'}
       />
 
@@ -175,6 +182,12 @@ const Dashboard = () => {
         onOpenChange={setFinishedQuotesOpen}
         onSelectList={handleSelectList}
         showFinalized={true}
+      />
+
+      <OpenQuotesDialog
+        open={openQuotesOpen}
+        onOpenChange={setOpenQuotesOpen}
+        onSelectList={handleSelectList}
       />
 
       <GenerateLinkDialog
