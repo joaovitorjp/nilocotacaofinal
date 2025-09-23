@@ -180,15 +180,19 @@ const QuotationResponse = () => {
   const isCompleted = linkData.status === 'respondido';
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <div className="border-b border-grid-border bg-background px-6 py-4 shadow-toolbar flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Cotação - {linkData.empresa}</h1>
-            <p className="text-sm text-muted-foreground mt-1">{lista.nome_lista}</p>
+    <div className="flex flex-col min-h-screen bg-background">
+      <div className="border-b border-grid-border bg-background px-3 md:px-6 py-3 md:py-4 shadow-toolbar flex-shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-xl font-semibold text-foreground truncate">
+              Cotação - {linkData.empresa}
+            </h1>
+            <p className="text-xs md:text-sm text-muted-foreground mt-1 truncate">
+              {lista.nome_lista}
+            </p>
           </div>
           {isCompleted && (
-            <div className="text-sm text-green-600 font-medium">
+            <div className="text-xs md:text-sm text-green-600 font-medium flex-shrink-0">
               ✓ Cotação enviada com sucesso
             </div>
           )}
@@ -198,20 +202,21 @@ const QuotationResponse = () => {
       <div className="flex-1 overflow-hidden flex flex-col">
         <SpreadsheetGrid
           data={generateGridData()}
-          headers={['Código Interno', 'Descrição', 'Código de Barras', `Preço - ${linkData.empresa}`]}
+          headers={['Código Interno', 'Descrição', 'Código de Barras', linkData.empresa]}
           onCellChange={handleCellChange}
           className="flex-1"
+          formatPriceColumns={true}
         />
       </div>
 
       {!isCompleted && (
-        <div className="flex-shrink-0 border-t border-grid-border bg-background px-6 py-4">
+        <div className="flex-shrink-0 border-t border-grid-border bg-background px-3 md:px-6 py-3 md:py-4">
           <div className="flex justify-center">
             <Button
               onClick={handleSubmit}
               disabled={submitting}
-              size="lg"
-              className="gap-2"
+              size="sm"
+              className="gap-2 w-full sm:w-auto"
             >
               <Send className="w-4 h-4" />
               {submitting ? 'Enviando...' : 'Enviar Resposta'}
@@ -221,8 +226,8 @@ const QuotationResponse = () => {
       )}
 
       {isCompleted && (
-        <div className="flex-shrink-0 border-t border-grid-border bg-background px-6 py-4">
-          <div className="text-center text-muted-foreground">
+        <div className="flex-shrink-0 border-t border-grid-border bg-background px-3 md:px-6 py-3 md:py-4">
+          <div className="text-center text-xs md:text-sm text-muted-foreground">
             Esta cotação já foi enviada e não pode mais ser editada.
           </div>
         </div>

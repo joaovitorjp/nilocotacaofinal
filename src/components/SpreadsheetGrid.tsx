@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency, parseCurrency } from '@/lib/utils';
 
 interface CellData {
   value: string;
@@ -13,6 +13,7 @@ interface SpreadsheetGridProps {
   onCellChange?: (row: number, col: number, value: string) => void;
   className?: string;
   highlightLowestPrices?: boolean;
+  formatPriceColumns?: boolean;
 }
 
 const SpreadsheetGrid = ({ 
@@ -20,7 +21,8 @@ const SpreadsheetGrid = ({
   headers, 
   onCellChange, 
   className, 
-  highlightLowestPrices = false 
+  highlightLowestPrices = false,
+  formatPriceColumns = false 
 }: SpreadsheetGridProps) => {
   const [selectedCell, setSelectedCell] = useState<{row: number, col: number} | null>(null);
   const [editingCell, setEditingCell] = useState<{row: number, col: number} | null>(null);
@@ -156,7 +158,11 @@ const SpreadsheetGrid = ({
 
   const handleCellSubmit = () => {
     if (editingCell && onCellChange) {
-      onCellChange(editingCell.row, editingCell.col, editValue);
+      // For price columns (col >= 3), save raw value without formatting
+      const valueToSave = formatPriceColumns && editingCell.col >= 3 
+        ? parseCurrency(editValue) 
+        : editValue;
+      onCellChange(editingCell.row, editingCell.col, valueToSave);
     }
     setEditingCell(null);
     setEditValue('');
@@ -186,9 +192,9 @@ const SpreadsheetGrid = ({
           {/* Row numbers column */}
           <div 
             className="flex-shrink-0 bg-grid-header border-r border-grid-border relative"
-            style={{ width: columnWidths[0] || 60 }}
+            style={{ width: Math.max(columnWidths[0] || 60, 40) }}
           >
-            <div className="h-9 flex items-center justify-center text-grid-headerText text-xs font-semibold">
+            <div className="h-8 md:h-9 flex items-center justify-center text-grid-headerText text-xs font-semibold">
               #
             </div>
             <div 
@@ -220,9 +226,9 @@ const SpreadsheetGrid = ({
               <div 
                 key={i}
                 className="flex-shrink-0 bg-grid-header border-r border-grid-border relative"
-                style={{ width: columnWidths[i + 1] || 120 }}
+                style={{ width: Math.max(columnWidths[i + 1] || 120, 80) }}
               >
-                <div className="h-9 flex items-center justify-center px-2 text-grid-headerText text-xs font-semibold">
+                <div className="h-8 md:h-9 flex items-center justify-center px-1 md:px-2 text-grid-headerText text-xs font-semibold">
                   <div className="truncate text-center w-full">
                     {typeof headerText === 'string' ? headerText : getColumnLabel(i)}
                   </div>
@@ -260,9 +266,9 @@ const SpreadsheetGrid = ({
             {/* Row number */}
             <div 
               className="flex-shrink-0 bg-grid-header border-r border-grid-border"
-              style={{ width: columnWidths[0] || 60 }}
+              style={{ width: Math.max(columnWidths[0] || 60, 40) }}
             >
-              <div className="h-8 flex items-center justify-center text-grid-headerText text-xs font-medium">
+              <div className="h-7 md:h-8 flex items-center justify-center text-grid-headerText text-xs font-medium">
                 {rowIndex + 1}
               </div>
             </div>
@@ -284,10 +290,10 @@ const SpreadsheetGrid = ({
                     cellData?.readOnly && "bg-grid-cellReadonly cursor-not-allowed",
                     cellData?.isLowestPrice && !isEditing && "bg-grid-lowestPrice"
                   )}
-                  style={{ width: columnWidths[colIndex + 1] || 120 }}
+                  style={{ width: Math.max(columnWidths[colIndex + 1] || 120, 80) }}
                   onClick={() => handleCellClick(rowIndex, colIndex)}
                 >
-                  <div className="h-8 flex items-center justify-center px-2 w-full">
+                  <div className="h-7 md:h-8 flex items-center justify-center px-1 md:px-2 w-full">
                     {isEditing ? (
                       <input
                         ref={inputRef}
@@ -297,10 +303,13 @@ const SpreadsheetGrid = ({
                         onBlur={handleCellSubmit}
                         onKeyDown={(e) => handleCellKeyDown(e, rowIndex, colIndex)}
                         className="w-full h-full bg-transparent border-0 outline-none text-xs text-center ring-2 ring-primary"
+                        placeholder={formatPriceColumns && colIndex >= 3 ? "R$ 0,00" : ""}
                       />
                     ) : (
                       <div className="text-xs text-center w-full truncate">
-                        {cellData?.value || ''}
+                        {formatPriceColumns && colIndex >= 3 && cellData?.value 
+                          ? formatCurrency(cellData.value)
+                          : cellData?.value || ''}
                       </div>
                     )}
                   </div>
