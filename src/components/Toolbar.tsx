@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, FolderOpen, Link, Archive, Eye } from 'lucide-react';
+import { Upload, FolderOpen, Link, Archive, Eye, Download } from 'lucide-react';
 
 interface ToolbarProps {
   onImportList: () => void;
@@ -8,16 +8,20 @@ interface ToolbarProps {
   onGenerateLink: () => void;
   onFinishedQuotes: () => void;
   onOpenQuotes: () => void;
+  onExportResults: () => void;
   canGenerateLink: boolean;
+  canExportResults: boolean;
 }
 
-const Toolbar = ({
-  onImportList,
-  onLoadList,
-  onGenerateLink,
+const Toolbar = ({ 
+  onImportList, 
+  onLoadList, 
+  onGenerateLink, 
   onFinishedQuotes,
   onOpenQuotes,
-  canGenerateLink
+  onExportResults,
+  canGenerateLink,
+  canExportResults
 }: ToolbarProps) => {
   return (
     <div className="bg-background border-b border-grid-border px-6 py-4 shadow-toolbar">
@@ -74,6 +78,17 @@ const Toolbar = ({
           >
             <Archive className="w-4 h-4" />
             Cotações Finalizadas
+          </Button>
+          
+          <Button
+            variant="toolbar"
+            size="sm"
+            onClick={onExportResults}
+            disabled={!canExportResults}
+            className="gap-2 disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            Exportar Resultado
           </Button>
         </div>
       </div>

@@ -59,6 +59,79 @@ const Dashboard = () => {
     setOpenQuotesOpen(true);
   };
 
+  const handleExportResults = () => {
+    if (!currentList) return;
+
+    try {
+      // Analisa as respostas para encontrar os menores preços por produto
+      const empresasVencedoras: { [empresa: string]: Array<{ codigoBarras: string; menorPreco: string }> } = {};
+      
+      // Para cada produto, encontra o menor preço
+      currentList.produtos.forEach((produto: Product, produtoIndex: number) => {
+        const precos: Array<{ empresa: string; preco: number; precoStr: string }> = [];
+        
+        // Coleta todos os preços para este produto
+        Object.entries(currentList.respostas).forEach(([empresa, respostas]) => {
+          const resposta = respostas[produto.codigo_interno];
+          if (resposta && resposta.trim() !== '') {
+            const precoNumerico = parseFloat(resposta.replace(',', '.'));
+            if (!isNaN(precoNumerico) && precoNumerico > 0) {
+              precos.push({ empresa, preco: precoNumerico, precoStr: resposta });
+            }
+          }
+        });
+        
+        // Encontra o menor preço
+        if (precos.length > 0) {
+          const menorPreco = Math.min(...precos.map(p => p.preco));
+          const empresasComMenorPreco = precos.filter(p => p.preco === menorPreco);
+          
+          // Adiciona às empresas vencedoras
+          empresasComMenorPreco.forEach(({ empresa, precoStr }) => {
+            if (!empresasVencedoras[empresa]) {
+              empresasVencedoras[empresa] = [];
+            }
+            empresasVencedoras[empresa].push({
+              codigoBarras: produto.codigo_barras,
+              menorPreco: precoStr
+            });
+          });
+        }
+      });
+
+      // Gera arquivos CSV para cada empresa vencedora
+      Object.entries(empresasVencedoras).forEach(([empresa, produtos]) => {
+        if (produtos.length > 0) {
+          const csvContent = produtos.map(produto => 
+            `${produto.codigoBarras};1;${produto.menorPreco}`
+          ).join('\n');
+          
+          // Cria e faz download do arquivo
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          link.setAttribute('href', url);
+          link.setAttribute('download', `${empresa.toLowerCase().replace(/\s+/g, '')}.csv`);
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      });
+
+      const totalEmpresas = Object.keys(empresasVencedoras).length;
+      if (totalEmpresas > 0) {
+        toast.success(`Resultados exportados! ${totalEmpresas} arquivo(s) CSV gerado(s).`);
+      } else {
+        toast.error('Nenhum resultado para exportar. Certifique-se de que há respostas na cotação.');
+      }
+    } catch (error) {
+      console.error('Erro ao exportar resultados:', error);
+      toast.error('Erro ao exportar resultados');
+    }
+  };
+
 
   const handleEndQuotation = () => {
     if (window.confirm('Tem certeza que deseja finalizar esta cotação? Ela não poderá mais ser editada.')) {
@@ -104,7 +177,9 @@ const Dashboard = () => {
         onGenerateLink={handleGenerateLink}
         onFinishedQuotes={handleFinishedQuotes}
         onOpenQuotes={handleOpenQuotes}
+        onExportResults={handleExportResults}
         canGenerateLink={!!currentList && currentList.status === 'aberta'}
+        canExportResults={!!currentList && currentList.status === 'finalizada'}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -136,7 +211,7 @@ const Dashboard = () => {
                   'Código Interno',
                   'Descrição', 
                   'Código de Barras',
-                  ...(currentList.respostas ? Object.keys(currentList.respostas).map(company => `Preço - ${company}`) : [])
+                  ...(currentList.respostas ? Object.keys(currentList.respostas) : [])
                 ]}
                 onCellChange={(row, col, value) => {
                   // This could be used for live editing if needed in the future
