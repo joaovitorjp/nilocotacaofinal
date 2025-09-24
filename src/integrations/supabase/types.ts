@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          password_hash: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          password_hash: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          password_hash?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       links_cotacao: {
         Row: {
           created_at: string
@@ -87,6 +111,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      authenticate_admin_user: {
+        Args: { email_input: string; password_input: string }
+        Returns: {
+          email: string
+          id: string
+        }[]
+      }
       authenticate_by_access_code: {
         Args: { access_code_input: string }
         Returns: {
@@ -112,6 +143,10 @@ export type Database = {
           email: string
           id: string
         }[]
+      }
+      create_initial_user: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       create_supplier: {
         Args: {
